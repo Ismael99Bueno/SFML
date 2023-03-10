@@ -139,7 +139,7 @@ if(SFML_OS_WINDOWS AND NOT SFML_USE_SYSTEM_DEPS)
 endif()
 
 # Automatically run the tests at the end of the build
-add_custom_target(runtests ALL
+add_custom_target(runtests
                   DEPENDS test-sfml-system test-sfml-window test-sfml-graphics test-sfml-network test-sfml-audio
 )
 
@@ -176,5 +176,7 @@ endif()
 
 add_custom_command(TARGET runtests
                    COMMENT "Run tests"
-                   POST_BUILD COMMAND ${COVERAGE_PREFIX} ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>
+                   POST_BUILD
+                   COMMAND "$<TARGET_FILE:test-sfml-window>" "--test-case=[Window] sf::Context" "--subcase=Version String" -m -ne -ni -nv -nc
+                   COMMAND ${COVERAGE_PREFIX} ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>
                    VERBATIM)

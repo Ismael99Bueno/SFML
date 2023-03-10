@@ -2,6 +2,9 @@ name: CI
 
 on: [push, pull_request]
 
+env:
+  GALLIUM_DRIVER: llvmpipe # Use Mesa 3D software OpenGL renderer
+
 jobs:
   build:
     name: ${{ matrix.platform.name }} ${{ matrix.config.name }} ${{ matrix.type.name }}
@@ -11,12 +14,12 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-        - { name: Windows VS2019 x86,     os: windows-2019, flags: -A Win32 }
-        - { name: Windows VS2019 x64,     os: windows-2019, flags: -A x64 }
-        - { name: Windows VS2022 x86,     os: windows-2022, flags: -A Win32 }
-        - { name: Windows VS2022 x64,     os: windows-2022, flags: -A x64 }
-        - { name: Windows VS2022 ClangCL, os: windows-2022, flags: -T ClangCL }
-        - { name: Windows VS2022 Clang,   os: windows-2022, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -GNinja }
+        - { name: Windows VS2019 x86,     os: windows-2019, flags: -DSFML_USE_MESA3D=TRUE -A Win32 }
+        - { name: Windows VS2019 x64,     os: windows-2019, flags: -DSFML_USE_MESA3D=TRUE -A x64 }
+        - { name: Windows VS2022 x86,     os: windows-2022, flags: -DSFML_USE_MESA3D=TRUE -A Win32 }
+        - { name: Windows VS2022 x64,     os: windows-2022, flags: -DSFML_USE_MESA3D=TRUE -A x64 }
+        - { name: Windows VS2022 ClangCL, os: windows-2022, flags: -DSFML_USE_MESA3D=TRUE -T ClangCL }
+        - { name: Windows VS2022 Clang,   os: windows-2022, flags: -DSFML_USE_MESA3D=TRUE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -GNinja }
         - { name: Linux GCC,            os: ubuntu-latest, prefix: xvfb-run -a, flags: -DSFML_RUN_DISPLAY_TESTS=ON -GNinja }
         - { name: Linux Clang,          os: ubuntu-latest, prefix: xvfb-run -a, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DSFML_RUN_DISPLAY_TESTS=ON -GNinja , gcovr_options: '--gcov-executable="llvm-cov-$CLANG_VERSION gcov"' }
         - { name: MacOS,                os: macos-11, flags: -GNinja }
@@ -30,10 +33,10 @@ jobs:
 
         include:
         - platform: { name: Windows VS2022, os: windows-2022 }
-          config: { name: Unity, flags: -DBUILD_SHARED_LIBS=TRUE -DCMAKE_UNITY_BUILD=ON }
+          config: { name: Unity, flags: -DSFML_USE_MESA3D=TRUE -DBUILD_SHARED_LIBS=TRUE -DCMAKE_UNITY_BUILD=ON }
           type: { name: Release }
         - platform: { name: Windows VS2022, os: windows-2022 }
-          config: { name: Unity, flags: -DBUILD_SHARED_LIBS=TRUE -DCMAKE_UNITY_BUILD=ON }
+          config: { name: Unity, flags: -DSFML_USE_MESA3D=TRUE -DBUILD_SHARED_LIBS=TRUE -DCMAKE_UNITY_BUILD=ON }
           type: { name: Debug, flags: -DCMAKE_BUILD_TYPE=Debug -DSFML_ENABLE_COVERAGE=TRUE }
         - platform: { name: MacOS, os: macos-11 }
           config: { name: Frameworks, flags: -GNinja -DSFML_BUILD_FRAMEWORKS=TRUE -DBUILD_SHARED_LIBS=TRUE }
@@ -93,6 +96,15 @@ jobs:
     - name: Build
       shell: bash
       run: ${{matrix.platform.prefix}} cmake --build $GITHUB_WORKSPACE/build --config ${{ matrix.type.name == 'Debug' && 'Debug' || 'Release' }} --target install
+
+    - name: Run Tests
+      if: matrix.platform.name != 'Android' && matrix.config.name != 'iOS'
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 10
+        timeout_minutes: 3
+        shell: bash
+        command: ${{matrix.platform.prefix}} cmake --build $GITHUB_WORKSPACE/build --config ${{ matrix.type.name == 'Debug' && 'Debug' || 'Release' }} --target runtests
 
     - name: Generate Coverage Report
       if: matrix.type.name == 'Debug' && runner.os != 'Windows' # Coverage is already generated on Windows when running tests.
