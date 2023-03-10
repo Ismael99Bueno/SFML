@@ -11,6 +11,12 @@
 #include <iomanip>
 #include <limits>
 
+#ifndef SFML_OPENGL_ES
+static constexpr bool skipOpenGLESTests = false;
+#else
+static constexpr bool skipOpenGLESTests = true;
+#endif
+
 namespace sf
 {
 struct BlendMode;
