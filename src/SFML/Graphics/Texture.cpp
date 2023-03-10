@@ -101,6 +101,34 @@ Texture::~Texture()
 
 
 ////////////////////////////////////////////////////////////
+Texture::Texture(Texture&& source) noexcept :
+m_size(source.m_size),
+m_actualSize(source.m_actualSize),
+m_texture(source.m_texture),
+m_isSmooth(source.m_isSmooth),
+m_sRgb(source.m_sRgb),
+m_isRepeated(source.m_isRepeated),
+m_pixelsFlipped(source.m_pixelsFlipped),
+m_fboAttachment(source.m_fboAttachment),
+m_hasMipmap(source.m_hasMipmap),
+m_cacheId(TextureImpl::getUniqueId())
+{
+    source.m_texture = 0;
+}
+
+
+////////////////////////////////////////////////////////////
+Texture& Texture::operator=(Texture&& right) noexcept
+{
+    Texture temp(std::move(right));
+
+    swap(temp);
+
+    return *this;
+}
+
+
+////////////////////////////////////////////////////////////
 bool Texture::create(const Vector2u& size)
 {
     // Check if texture parameters are valid before creating it
