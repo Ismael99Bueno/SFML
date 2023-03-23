@@ -33,6 +33,7 @@
 
 # Build folders
 build/
+**/Makefile
 
 # Cache/IDE folders
 .cache/
