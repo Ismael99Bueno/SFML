@@ -36,6 +36,10 @@ build/
 build-sfml/
 **/Makefile
 
+# VS artifacts
+*.sln
+**.vcxproj*
+
 # Cache/IDE folders
 .cache/
 .vscode/
